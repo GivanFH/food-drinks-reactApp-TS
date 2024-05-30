@@ -1,25 +1,48 @@
-import { useEffect, useMemo } from "react"
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useAppStore } from "../stores/useAppStore"
 
 export default function Header() {
 
+    const [searchFilters, setSearchFilters] = useState({
+        ingredient: '',
+        category: ''
+    })
 
     const { pathname } = useLocation()
     const isHome = useMemo(() => pathname === '/', [pathname])
 
     const fetchCategories = useAppStore((state) => state.fetchCategories)
     const categories = useAppStore((state) => state.categories)
-
-    console.log(categories)
+    const searchRecipes = useAppStore((state) => state.searchRecipes)
 
     useEffect(() => {
         fetchCategories()
     }, [])
-    
+
+    const handleChange = ( e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
+        setSearchFilters({
+            ...searchFilters,
+            [e.target.name] : e.target.value
+        })
+    }
+
+    const handleSubmit = (e : FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        //TODO: VALIDAR
+        if (Object.values(searchFilters).includes('')) {
+            console.log('Todos los campos son obligatorios')
+            return
+        }
+
+        //Consultar las recetas
+        searchRecipes(searchFilters)
+
+    }
 
     return (
-        <header className= { isHome ? 'bg-header bg-center bg-cover' : 'bg-slate-800'} >
+        <header className={isHome ? 'bg-header bg-center bg-cover' : 'bg-slate-800'} >
             <div className="mx-auto container px-5 py-16">
                 <div className="flex justify-between items-center">
                     <div>
@@ -48,6 +71,7 @@ export default function Header() {
                 {isHome && (
                     <form
                         className="md:w-1/2 2xl:w-1/3 bg-orange-400 my-32 p-10 rounded-lg"
+                        onSubmit={handleSubmit}
                     >
                         <div className="space-y-4">
                             <label
@@ -62,6 +86,8 @@ export default function Header() {
                                 name="ingredient"
                                 className="p-3 w-full rounded-lg focus:outline-none"
                                 placeholder="Nombre o Ingrediente. Ej. Vodka, Tequila..."
+                                onChange={handleChange}
+                                value={searchFilters.ingredient}
                             />
                         </div>
                         <div className="space-y-4">
@@ -75,11 +101,21 @@ export default function Header() {
                                 name="category"
                                 id="category"
                                 className="p-3 w-full rounded-lg focus:outline-none"
+                                onChange={handleChange}
+                                value={searchFilters.category}
                             >
                                 <option value=""> -- Seleccione --</option>
+                                {categories.drinks.map(category => (
+                                    <option 
+                                        value={category.strCategory}
+                                        key={category.strCategory}>
+                                        {category.strCategory}
+                                    </option>
+                                ))}
                             </select>
                         </div>
-                        <input type="submit"
+                        <input
+                            type="submit"
                             value='buscar recetas'
                             className="cursor-pointer bg-orange-800 hover:bg-orange-900 text-white font-extrabold w-full p-2 rounded-lg uppercase mt-4"
                         />
